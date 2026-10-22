@@ -1,0 +1,19 @@
+[project]
+name = "trimming"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "datasets>=5.1.0",
+    "matplotlib>=3.11.2",
+    "sentence-transformers>=6.1.0",
+    "spyder-kernels==2.2.*",
+    "tokenizers>=0.23.3",
+    "torch>=2.11.0",
+    "transformers>=5.19.0",
+]
+
+[[tool.uv.index]]
+url = "https://download.pytorch.org/whl/cu128"
+
