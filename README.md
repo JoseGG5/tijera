@@ -5,7 +5,7 @@ by making the vocab_size a multiple of 8 (for gpu threading). Some things in the
 (I would probably use a mix between the specialized corpus and a generic one such as fineweb and consider the origin of mined tokens when selecting the vocab)
 
 Everything in this repo except eval.py is fully written by me. Not because I think I can code better than AI Agents (I can't) or I think AI Agents are useless (they are tremendously useful),
-but because I wanted to go back to write code by myself and found this project interesting to optimize models that I wanted to test
+but because I enjoy coding by myself and found this project interesting to optimize models that I wanted to test
 for some other things I am building. I learned waaaaay more than if would have used AI Agents, although It would have probably taken half the time (if not less).
 
 Inspo: https://huggingface.co/blog/lbourdois/introduction-to-trimming
