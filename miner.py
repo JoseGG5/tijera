@@ -15,6 +15,7 @@ from collections import Counter
 from typing import Literal
 
 from tqdm import tqdm
+from transformers import AutoTokenizer
 from datasets import load_dataset, concatenate_datasets
 from tokenizers import Tokenizer
 from tokenizers.pre_tokenizers import ByteLevel
@@ -90,11 +91,25 @@ class Miner:
         has_byte_fallback = json_tokenizer["model"].get("byte_fallback", False)
     
         candidates = set()
-    
+        
         if is_bytelevel:
             candidates.update(ByteLevel.alphabet())
-    
+        
+        # byte fallback tokens
         if has_byte_fallback:
+            
+            for byte in range(256):
+                byte_token = f"<0x{byte:02X}>"
+                
+                # if exists in og vocab append it
+                if byte_token in vocab:
+                    candidates.add(byte_token)
+                
+                # there are some ascii characters that don't have the byte fallback token but a literal token
+                # for mDenseOn I've seen the \t token
+                elif byte < 128 and chr(byte) in vocab:
+                    candidates.add(chr(byte))
+            
             candidates.update(f"<0x{i:02X}>" for i in range(256))
     
         # ensure that only tokens from the tokenizer get in the candidate set
@@ -106,6 +121,31 @@ class Miner:
         
         return mandatory_tokens
         
+    
+    def get_special_tokens(self) -> list[str]:
+        """ Uses the AutoTokenizer API from transformer as tokenizers currently
+            does not give the option to get the special tokens """
+        
+        # there are two types of special tokens:
+            # 1. the ones returned by the autotokenizer api ([CLS], [PAD], etc)
+            # 2. the ones that are added tokens marked as special ([end_of_turn], etc)
+        
+        # special tokens returned by the autotokenizer api
+        special_ids = set(AutoTokenizer.from_pretrained(self.model_trim).all_special_ids)
+        
+        json_tokenizer = load_json(self.model_trim)
+        
+        # special tokens present in added_tokens
+        special_ids.update(
+            token["id"]
+            for token in json_tokenizer.get("added_tokens", [])
+            if token.get("special", False)
+        )
+
+        return sorted(special_ids)
+        
+        
+    
         
     def mine(self) -> tuple[Counter[int], dict[str, int], dict[str, int]]:
         """ Mines from the selected corpus adn return the top k most
@@ -149,7 +189,7 @@ class Miner:
             total_tokens += len(ids)
         
         mandatory_tokens = self.get_mandatory_values()
-        special_ids = get_special_tokens(model_name=self.model_trim)
+        special_ids = self.get_special_tokens()
         special_tokens = {self.tokenizer.id_to_token(id): id for id in special_ids}
         
         return token_freqs, mandatory_tokens, special_tokens

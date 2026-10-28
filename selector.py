@@ -5,7 +5,7 @@ Created on Fri Oct 23 12:51:20 2026
 @author: Jose Antonio
 """
 
-""" Builds the new tokenizer from the mined tokens """
+""" Selects new vocab and merges to keep for the new tokenizer """
 
 from collections import defaultdict
 
@@ -94,13 +94,13 @@ class Selector:
             required = self.get_deps(token_id)  
             missing = required - final_ids  # all the ones needed to get to that token except the ones already there
         
-            if len(final_ids) + len(missing) <= self.obj_tokens:  # TODO: There is a chance we don't get the desired vocab
+            if len(final_ids) + len(missing) <= self.obj_tokens:  # TODO: There is a chance we don't get the desired vocab with this approach. fix
                 final_ids.update(missing)  
     
         # convert to a dict
         final_vocab = {}
-        for id in tqdm(final_ids, desc="Building vocab", total=len(final_ids)):
-            final_vocab[self.tokenizer.id_to_token(id)] = id
+        for idx, id in enumerate(tqdm(final_ids, desc="Building vocab", total=len(final_ids))):
+            final_vocab[self.tokenizer.id_to_token(id)] = idx  # new contiguous idx
         
         
         # get og merges and iterate over them. if both tokens on a merge and the resulting one
@@ -114,7 +114,7 @@ class Selector:
         final_merges = []
         for merge in tqdm(merges, desc="Building merges", total=len(merges)):
             left, right = merge
-            if left in vocab and right in vocab and left + right in vocab:
+            if left in final_vocab and right in final_vocab and left + right in final_vocab:
                 final_merges.append(merge)
         
         return final_vocab, final_merges
@@ -137,14 +137,5 @@ if __name__ == "__main__":
             mandatory_tokens=mandatory,
             obj_tokens=32768
         )
-    
-    
+        
     vocab, merges = selector.select()
-        
-        
-        
-    
-    
-
-
-
